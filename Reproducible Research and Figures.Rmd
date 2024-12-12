@@ -1,13 +1,14 @@
 ---
 title: "Reproducible Research and Figures"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 date: "2024-12-12"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 
 ## QUESTION 01: Data Visualisation for Science Communication
 
@@ -18,7 +19,9 @@ library(janitor)
 library(dplyr)
 library(here)
 ```
+
 # Load and save raw dataset
+
 ```{r}
 dir.create("Data")
 write.csv(penguins_raw, here("Data", "penguins_raw.csv"))
@@ -30,10 +33,11 @@ write.csv(penguins_raw, here("Data", "penguins_raw.csv"))
 ggplot(penguins_raw, aes(x = `Flipper Length (mm)`, y = `Body Mass (g)`)) + geom_point() + labs(title = "Flipper Length vs Body Mass of Penguins", x = "Flipper Length (mm)", y = "Body Mass (g)")
 
 ```
+
 ### b) Write about how your design choices mislead the reader about the underlying data (200-300 words).
-This figure presents the data from the raw dataset on the relationship between Body Mass and Flipper Length of the penguins but does not contain key grouping data to contextualise the trends. Important grouping data that is omitted includes the sex and species of the penguins. The figure is misleading without this information because the trend shown could obscure trends specific to the different groups (such as different sexes or species). The figure is also misleading because the dataset still contains some sections where the results are N/A, which cannot be plotted on a graph such as the one used above. Therefore, the figure does not even provide a robust overview of the raw data, and it is not clear what has been omitted and why. The colour scheme used also makes it reasonably hard to distinguish the points from the background. Therefore, the figure misleads the reader about the underlying data due to omission of crucial grouping information, a lack of clarity as to which parts of the dataset have been included, and an unclear colour scheme.  
-https://elifesciences.org/articles/16800
-https://www.nature.com/articles/533452a
+
+This figure presents the data from the raw dataset on the relationship between Body Mass and Flipper Length of the penguins but does not contain key grouping data to contextualise the trends. Important grouping data that is omitted includes the sex and species of the penguins. The figure is misleading without this information because the trend shown could obscure trends specific to the different groups (such as different sexes or species). The figure is also misleading because the dataset still contains some sections where the results are N/A, which cannot be plotted on a graph such as the one used above. Therefore, the figure does not even provide a robust overview of the raw data, and it is not clear what has been omitted and why. The colour scheme used also makes it reasonably hard to distinguish the points from the background. Therefore, the figure misleads the reader about the underlying data due to omission of crucial grouping information, a lack of clarity as to which parts of the dataset have been included, and an unclear colour scheme.
+<https://elifesciences.org/articles/16800> <https://www.nature.com/articles/533452a>
 
 ------------------------------------------------------------------------
 
@@ -41,11 +45,10 @@ https://www.nature.com/articles/533452a
 
 ### Introduction
 
-This analysis uses data from the Palmer Penguins dataset. The data was gathered from the Palmer Station Antarctica and originally published in Gorman et al., 2014. The dataset includes data from three different penguin species: Adélie (Pygoscelis adeliae), Chinstrap (Pygoscelis antarcticus), and Gentoo penguins (Pygoscelis papua). The final aim of the data analysis is to determine whether or not the relationship between the flipper length and body mass of the penguins is independent of their sex. 
-The first step is to generate functions to clean the data and prepare it for the final data analysis (all functions taken from Lydia France, cleaning.R, 2024).
+This analysis uses data from the Palmer Penguins dataset. The data was gathered from the Palmer Station Antarctica and originally published in Gorman et al., 2014. The dataset includes data from three different penguin species: Adélie (Pygoscelis adeliae), Chinstrap (Pygoscelis antarcticus), and Gentoo penguins (Pygoscelis papua). The final aim of the data analysis is to determine whether or not the relationship between the flipper length and body mass of the penguins is independent of their sex. The first step is to generate functions to clean the data and prepare it for the final data analysis (all functions taken from Lydia France, cleaning.R, 2024).
 
-    
 # The code below defines a function that standardises the names of the columns by making them all lower case with underscores instead of spaces (snake case)
+
 ```{r}
 clean_column_names <- function(penguins_data) {
     penguins_data %>%
@@ -84,7 +87,6 @@ subset_columns <- function(penguins_data, column_names) {
 }
 ```
 
-
 # A function to remove rows which contain NA values
 
 ```{r}
@@ -94,9 +96,8 @@ remove_NA <- function(penguins_data) {
 }
 ```
 
-
-
 # Using the functions defined above to generate a clean dataset to use for the data analysis. Then saving that new file
+
 ```{r}
 
 penguins_clean <- penguins_raw %>%
@@ -111,8 +112,8 @@ write.csv(penguins_clean, here("Data", "penguins_clean.csv"))
 
 ```
 
-
 # Creating an exploratory figure to show Flipper Length vs Body Mass by Sex using the new dataset. Then save the figure
+
 ```{r}
 ggplot(penguins_clean, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + geom_point() + labs(title = "Flipper Length vs Body Mass by Sex", x = "Flipper Length (mm)", y = "Body Mass (g)") + theme_minimal()
 
@@ -124,25 +125,28 @@ ggsave(here("Figures", "exploratory_plot.pdf"), plot = exploratory_plot)
 ```
 
 ### Hypothesis
-H0: Flipper Length has no significant impact on Body Mass after accounting for sex
-H1: Flipper Length has a signficant impact on Body Mass after accounting for sex
 
-H0: There is no significant difference in Body Mass between sexes after controlling for flipper length
-H1: There is a significant difference in Body Mass between sexes after controlling for flipper length
+H0: Flipper Length has no significant impact on Body Mass after accounting for sex. 
+H1: Flipper Length has a signficant impact on Body Mass after accounting for sex.
 
-H0: The relationship between flipper length and body mass is independent of sex
-H1: The relationship between flipper length and body mass is not independent of sex
+H0: There is no significant difference in Body Mass between sexes after controlling for flipper length.
+H1: There is a significant difference in Body Mass between sexes after controlling for flipper length.
 
+H0: The relationship between flipper length and body mass is independent of sex.
+H1: The relationship between flipper length and body mass is not independent of sex.
 
 ### Statistical Methods
 
 #Carry out an ANCOVA
+
 ```{r}
 ancova_model <- aov(body_mass_g ~ flipper_length_mm * sex, data = penguins_clean)
 summary(ancova_model)
 
 ```
+
 # Producing a figure that tests the assumptions of normality of the dependent variable
+
 ```{r}
 plot(ancova_model)
 ```
@@ -150,6 +154,7 @@ plot(ancova_model)
 ### Results & Discussion
 
 # Produce and save results figure
+
 ```{r}
 ggplot(data = penguins_clean, aes(x = flipper_length_mm, y = body_mass_g), color = sex) + geom_point(aes(color = sex)) + geom_smooth(method = "lm", se=TRUE, aes(color=sex)) + labs(title = "Flipper Length vs Body Mass by Sex with Regression Lines", x = "Flipper Length (mm)", y = "Body Mass (g)", color = "Sex") + theme_minimal()
 
@@ -158,15 +163,33 @@ results_plot <- ggplot(data = penguins_clean, aes(x = flipper_length_mm, y = bod
 ggsave(here("Figures", "results_plot.pdf"), plot = results_plot)
 
 ```
-Looking at the results of the ANCOVA, the extremely small Pr(>F) value in the flipper_length_mm row of < 2e-16, which is less than 0.05, and thus provides enough evidence to reject the null hypothesis and state that flipper length has a significant effect on body mass after accounting for sex. The small Pr(>F) value in the sex row of 3.08e-16, which again is less than 0.05, also provides sufficient evidence to reject the null hypothesis and conclude that there is a significant difference in body mass of males and females after accounting for flipper length. The Pr(>F) value in the flipper_length_mm:sex row (the interaction effect), is 0.92. This is not less than 0.05, and so does not provide sufficient evidence to reject the null hypothesis. Therefore, we conclude that the he relationship between flipper length and body mass is independent of sex, meaning that the effect of flipper length on body mass is the same for both sexes. 
 
-ANCOVA is an appropriate statistical method since it allows us to examine the relationship between factors while controlling for the effects of the covariates. I have tested the assumptions of the ANCOVA by using a QQ plot to test the normality and homoscedasity of the residuals. 
+Looking at the results of the ANCOVA, the extremely small Pr(\>F) value in the flipper_length_mm row of \< 2e-16, which is less than 0.05, and thus provides enough evidence to reject the null hypothesis and state that flipper length has a significant effect on body mass after accounting for sex. The small Pr(\>F) value in the sex row of 3.08e-16, which again is less than 0.05, also provides sufficient evidence to reject the null hypothesis and conclude that there is a significant difference in body mass of males and females after accounting for flipper length. The Pr(\>F) value in the flipper_length_mm:sex row (the interaction effect), is 0.92. This is not less than 0.05, and so does not provide sufficient evidence to reject the null hypothesis. Therefore, we conclude that the he relationship between flipper length and body mass is independent of sex, meaning that the effect of flipper length on body mass is the same for both sexes.
 
-The results of this statistical analysis provide a number of insights into the morphology of these species of penguin. The significant effect of flipper length on body mass suggests that the two traits share similarities in their morphological pathways. The significant difference in the body mass between the sexes highlights a sexual dimorphism between the male and female penguins, which could be linked to behavioural differences such as differences in mating and foraging activity, although this is an area where more research must be done. The sex independence of the relationship between flipper length and body mass highlights that the similarities in the morphological pathways of the two traits are not sex-specific, but in fact are shared between the males and females. 
+ANCOVA is an appropriate statistical method since it allows us to examine the relationship between factors while controlling for the effects of the covariates. I have tested the assumptions of the ANCOVA by using a QQ plot to test the normality and homoscedasity of the residuals.
 
+The results of this statistical analysis provide a number of insights into the morphology of these species of penguin. The significant effect of flipper length on body mass suggests that the two traits share similarities in their morphological pathways. The significant difference in the body mass between the sexes highlights a sexual dimorphism between the male and female penguins, which could be linked to behavioural differences such as differences in mating and foraging activity, although this is an area where more research must be done. The sex independence of the relationship between flipper length and body mass highlights that the similarities in the morphological pathways of the two traits are not sex-specific, but in fact are shared between the males and females.
 
 ### Conclusion
-This data analysis highlights trends in important aspects of penguin morphology, flipper length and body mass, and focuses on how these are manifested in the different sexes. These trends provide some insight into the morphological pathways of the penguins, but this represents an area where future research should be focused, especially into the genetic mechanisms which are behind these morphological traits. Additionally, the role these morphological traits and sex-based differences play in the penguins' behaviour could also be studied further, providing a more comprehensive analysis of their ecological and evolutionary significance.   
 
+This data analysis highlights trends in important aspects of penguin morphology, flipper length and body mass, and focuses on how these are manifested in the different sexes. These trends provide some insight into the morphological pathways of the penguins, but this represents an area where future research should be focused, especially into the genetic mechanisms which are behind these morphological traits. Additionally, the role these morphological traits and sex-based differences play in the penguins' behaviour could also be studied further, providing a more comprehensive analysis of their ecological and evolutionary significance.
 
+------------------------------------------------------------------------
 
+## QUESTION 3: Open Science
+
+### a) GitHub
+
+<https://github.com/stats-pro>
+
+### b) Share your repo with a partner, download, and try to run their data pipeline.
+
+<https://github.com/SpiderStats>
+
+### c) Reflect on your experience running their code. (300-500 words)
+
+In general, the code is easy to run. The only part of the code that I could not run was the levene test (leveneTest(culmen_depth_mm \~ species, data = penguins_clean) )), and I think that the reason for this was because I could not install the package "car", possibly due to a problem with my software. Unfortunately, I could not fix this issue, and so I cannot be sure that the test ran and that the results were appropriate. However, other than that it was very straightforward, and I did not need to fix anything. The descriptions of each line of code used were useful to understand the thinking behind them. I found the functions very clearly defined, and that was useful to understand what alterations had been made to the original data set, and this is also very important for the reproducibility of the analysis. I would find it very easy to alter one of the figures, as they are clearly produced and labelled, with many aesthetic features included and potentially easily changed. One thing that I would improve about the code in general is that the chunks that it is written in are overly long. If the chunks had been shorter,if errors had arisen, they would have been easier to isolate and fix quickly. The statistical analysis used is clear and appropriate, but not all of the assumptions for an ANCOVA are tested or discussed, which slightly undermines the significance of the results. However, the hypotheses are clearly displayed and the results of the ANCOVA are interpreted well. The results figure used is appropriate and clear, but would be even clearer if it included some reference to the actual results of the statistical analysis (ANCOVA). To summarise, the code was generally very easy to run, apart from my issue with the "car package". The figures were clear and reproducible, and it was clear why they author had completed each step.
+
+### d) Reflect on your own code based on your experience with your partner's code and their review of yours. (300-500 words)
+
+One thing that I leaned from the feedback provided by my partner was that the more detailed captions make code easier to understand and follow. I also noticed that when I was going through my partner's code, as I understood the thought process behind the code provided much better when the captions provided more detail. This was also highlighted in the section of my partner's code that did not run properly, where the caption provided was inadequate, and I struggled to understand what the section that did not run was meant to produce. My partner also suggested including more aesthetic features in the code for the figures, in order to make them more easily customisable if the person running the code wished to make alterations. I agree with this feedback, as even though I feel that the figures look good and clear as they are, this is subjective and it is good to accommodate for all preferences. My partner suggested that I run the tests for the assumptions of ANCOVA tests before I summarise the ANCOVA itself. This is a good suggestion as it justifies that the ANCOVA is the appropriate statistical method before I go on to use it, which I think is a more cogent line of thought than the other way round. After looking at my partner's code, I realised the importance of integrating data from the statistical analysis in any results figure, which was not something I did. While the nature of the results and statistical analysis in this piece of work made this difficult, it is something that I think would have improved my work produced. To summarise, the feedback my partner provided highlighted some small changes that I could make and extra detail I could introduce to ensure the code is easily understood and reproducible. However, I was encouraged to read that my partner found my code ran smoothly and was reasonably easy to understand.
