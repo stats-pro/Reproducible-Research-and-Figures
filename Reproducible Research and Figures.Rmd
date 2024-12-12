@@ -1,0 +1,172 @@
+---
+title: "Reproducible Research and Figures"
+output: html_document
+date: "2024-12-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## QUESTION 01: Data Visualisation for Science Communication
+
+```{r}
+library(ggplot2)
+library(palmerpenguins)
+library(janitor)
+library(dplyr)
+library(here)
+```
+# Load and save raw dataset
+```{r}
+dir.create("Data")
+write.csv(penguins_raw, here("Data", "penguins_raw.csv"))
+```
+
+### a) Provide your figure here:
+
+```{r bad figure code, echo=FALSE}
+ggplot(penguins_raw, aes(x = `Flipper Length (mm)`, y = `Body Mass (g)`)) + geom_point() + labs(title = "Flipper Length vs Body Mass of Penguins", x = "Flipper Length (mm)", y = "Body Mass (g)")
+
+```
+### b) Write about how your design choices mislead the reader about the underlying data (200-300 words).
+This figure presents the data from the raw dataset on the relationship between Body Mass and Flipper Length of the penguins but does not contain key grouping data to contextualise the trends. Important grouping data that is omitted includes the sex and species of the penguins. The figure is misleading without this information because the trend shown could obscure trends specific to the different groups (such as different sexes or species). The figure is also misleading because the dataset still contains some sections where the results are N/A, which cannot be plotted on a graph such as the one used above. Therefore, the figure does not even provide a robust overview of the raw data, and it is not clear what has been omitted and why. The colour scheme used also makes it reasonably hard to distinguish the points from the background. Therefore, the figure misleads the reader about the underlying data due to omission of crucial grouping information, a lack of clarity as to which parts of the dataset have been included, and an unclear colour scheme.  
+https://elifesciences.org/articles/16800
+https://www.nature.com/articles/533452a
+
+------------------------------------------------------------------------
+
+## QUESTION 2: Data Pipeline
+
+### Introduction
+
+This analysis uses data from the Palmer Penguins dataset. The data was gathered from the Palmer Station Antarctica and originally published in Gorman et al., 2014. The dataset includes data from three different penguin species: Adélie (Pygoscelis adeliae), Chinstrap (Pygoscelis antarcticus), and Gentoo penguins (Pygoscelis papua). The final aim of the data analysis is to determine whether or not the relationship between the flipper length and body mass of the penguins is independent of their sex. 
+The first step is to generate functions to clean the data and prepare it for the final data analysis (all functions taken from Lydia France, cleaning.R, 2024).
+
+    
+# The code below defines a function that standardises the names of the columns by making them all lower case with underscores instead of spaces (snake case)
+```{r}
+clean_column_names <- function(penguins_data) {
+    penguins_data %>%
+        clean_names()
+}
+```
+
+# A function that shortens the names of the species
+
+```{r}
+shorten_species <- function(penguins_data) {
+    penguins_data %>%
+        mutate(species = case_when(
+            species == "Adelie Penguin (Pygoscelis adeliae)" ~ "Adelie",
+            species == "Chinstrap penguin (Pygoscelis antarctica)" ~ "Chinstrap",
+            species == "Gentoo penguin (Pygoscelis papua)" ~ "Gentoo"
+        ))
+}
+```
+
+# A function to remove any empty columns or rows
+
+```{r}
+remove_empty_columns_rows <- function(penguins_data) {
+    penguins_data %>%
+        remove_empty(c("rows", "cols"))
+}
+```
+
+# A function to make a subset of the data based on the list of column names
+
+```{r}
+subset_columns <- function(penguins_data, column_names) {
+    penguins_data %>%
+        select(all_of(column_names))
+}
+```
+
+
+# A function to remove rows which contain NA values
+
+```{r}
+remove_NA <- function(penguins_data) {
+    penguins_data %>%
+        na.omit()
+}
+```
+
+
+
+# Using the functions defined above to generate a clean dataset to use for the data analysis. Then saving that new file
+```{r}
+
+penguins_clean <- penguins_raw %>%
+    clean_column_names() %>%
+    shorten_species() %>%
+    remove_empty_columns_rows() %>%
+    subset_columns(c("flipper_length_mm", "body_mass_g", "sex"))%>%
+    remove_NA()
+    
+write.csv(penguins_clean, here("Data", "penguins_clean.csv")) 
+
+
+```
+
+
+# Creating an exploratory figure to show Flipper Length vs Body Mass by Sex using the new dataset. Then save the figure
+```{r}
+ggplot(penguins_clean, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + geom_point() + labs(title = "Flipper Length vs Body Mass by Sex", x = "Flipper Length (mm)", y = "Body Mass (g)") + theme_minimal()
+
+exploratory_plot <- ggplot(penguins_clean, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + geom_point() + labs(title = "Flipper Length vs Body Mass by Sex", x = "Flipper Length (mm)", y = "Body Mass (g)") + theme_minimal()
+
+dir.create("Figures")
+ggsave(here("Figures", "exploratory_plot.pdf"), plot = exploratory_plot)
+
+```
+
+### Hypothesis
+H0: Flipper Length has no significant impact on Body Mass after accounting for sex
+H1: Flipper Length has a signficant impact on Body Mass after accounting for sex
+
+H0: There is no significant difference in Body Mass between sexes after controlling for flipper length
+H1: There is a significant difference in Body Mass between sexes after controlling for flipper length
+
+H0: The relationship between flipper length and body mass is independent of sex
+H1: The relationship between flipper length and body mass is not independent of sex
+
+
+### Statistical Methods
+
+#Carry out an ANCOVA
+```{r}
+ancova_model <- aov(body_mass_g ~ flipper_length_mm * sex, data = penguins_clean)
+summary(ancova_model)
+
+```
+# Producing a figure that tests the assumptions of normality of the dependent variable
+```{r}
+plot(ancova_model)
+```
+
+### Results & Discussion
+
+# Produce and save results figure
+```{r}
+ggplot(data = penguins_clean, aes(x = flipper_length_mm, y = body_mass_g), color = sex) + geom_point(aes(color = sex)) + geom_smooth(method = "lm", se=TRUE, aes(color=sex)) + labs(title = "Flipper Length vs Body Mass by Sex with Regression Lines", x = "Flipper Length (mm)", y = "Body Mass (g)", color = "Sex") + theme_minimal()
+
+results_plot <- ggplot(data = penguins_clean, aes(x = flipper_length_mm, y = body_mass_g), color = sex) + geom_point(aes(color = sex)) + geom_smooth(method = "lm", se=TRUE, aes(color=sex)) + labs(title = "Flipper Length vs Body Mass by Sex with Regression Lines", x = "Flipper Length (mm)", y = "Body Mass (g)", color = "Sex") + theme_minimal()
+
+ggsave(here("Figures", "results_plot.pdf"), plot = results_plot)
+
+```
+Looking at the results of the ANCOVA, the extremely small Pr(>F) value in the flipper_length_mm row of < 2e-16, which is less than 0.05, and thus provides enough evidence to reject the null hypothesis and state that flipper length has a significant effect on body mass after accounting for sex. The small Pr(>F) value in the sex row of 3.08e-16, which again is less than 0.05, also provides sufficient evidence to reject the null hypothesis and conclude that there is a significant difference in body mass of males and females after accounting for flipper length. The Pr(>F) value in the flipper_length_mm:sex row (the interaction effect), is 0.92. This is not less than 0.05, and so does not provide sufficient evidence to reject the null hypothesis. Therefore, we conclude that the he relationship between flipper length and body mass is independent of sex, meaning that the effect of flipper length on body mass is the same for both sexes. 
+
+ANCOVA is an appropriate statistical method since it allows us to examine the relationship between factors while controlling for the effects of the covariates. I have tested the assumptions of the ANCOVA by using a QQ plot to test the normality and homoscedasity of the residuals. 
+
+The results of this statistical analysis provide a number of insights into the morphology of these species of penguin. The significant effect of flipper length on body mass suggests that the two traits share similarities in their morphological pathways. The significant difference in the body mass between the sexes highlights a sexual dimorphism between the male and female penguins, which could be linked to behavioural differences such as differences in mating and foraging activity, although this is an area where more research must be done. The sex independence of the relationship between flipper length and body mass highlights that the similarities in the morphological pathways of the two traits are not sex-specific, but in fact are shared between the males and females. 
+
+
+### Conclusion
+This data analysis highlights trends in important aspects of penguin morphology, flipper length and body mass, and focuses on how these are manifested in the different sexes. These trends provide some insight into the morphological pathways of the penguins, but this represents an area where future research should be focused, especially into the genetic mechanisms which are behind these morphological traits. Additionally, the role these morphological traits and sex-based differences play in the penguins' behaviour could also be studied further, providing a more comprehensive analysis of their ecological and evolutionary significance.   
+
+
+
